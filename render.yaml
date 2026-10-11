@@ -1,9 +1,3 @@
-databases:
-  - name: caregiver-db
-    plan: free
-    databaseName: caregiver
-    user: caregiver
-
 services:
   - type: web
     name: caregiver-schedule
@@ -18,9 +12,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        fromDatabase:
-          name: caregiver-db
-          property: connectionString
+        sync: false
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD

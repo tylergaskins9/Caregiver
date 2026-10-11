@@ -50,9 +50,19 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db.create_all()
+        _enable_row_level_security()
         _ensure_admin()
 
     return app
+
+
+def _enable_row_level_security():
+    # RLS with no policies blocks Supabase's public Data API; the app's owner role is unaffected
+    if db.engine.dialect.name != 'postgresql':
+        return
+    with db.engine.begin() as conn:
+        for table in db.metadata.sorted_tables:
+            conn.exec_driver_sql(f'ALTER TABLE "{table.name}" ENABLE ROW LEVEL SECURITY')
 
 
 def _ensure_admin():
