@@ -1,6 +1,5 @@
 from datetime import datetime, date, timedelta
 import json
-import time
 
 from app import db, login_manager
 from flask_login import UserMixin
@@ -114,13 +113,8 @@ class Shift(db.Model):
             return 0.0
 
     def to_event(self):
-        # Build local UTC-offset string (e.g. '-04:00') so FullCalendar
-        # never misinterprets floating times via timezone conversion.
-        _offset_secs = -time.timezone if not time.daylight else -time.altzone
-        _sign = '+' if _offset_secs >= 0 else '-'
-        _h, _m = divmod(abs(_offset_secs) // 60, 60)
-        _tz = f"{_sign}{_h:02d}:{_m:02d}"
-
+        # Times are sent without a UTC offset so the calendar shows them exactly as saved,
+        # regardless of the server's or the browser's time zone.
         def _fmt(t):
             h, m = map(int, t.split(':'))
             return f"{h % 12 or 12}{f':{m:02d}' if m else ''}{'am' if h < 12 else 'pm'}"
@@ -129,8 +123,8 @@ class Shift(db.Model):
         return {
             'id': self.id,
             'title': self.caregiver.name,
-            'start': f"{self.date.isoformat()}T{self.start_time}:00{_tz}",
-            'end': f"{self.date.isoformat()}T{self.end_time}:00{_tz}",
+            'start': f"{self.date.isoformat()}T{self.start_time}:00",
+            'end': f"{self.date.isoformat()}T{self.end_time}:00",
             'backgroundColor': self.caregiver.color,
             'borderColor': self.caregiver.color,
             'textColor': '#ffffff',

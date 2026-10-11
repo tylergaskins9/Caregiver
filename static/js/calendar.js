@@ -169,9 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Weekly summary bar ─────────────────────────────────────────────────────
 function refreshSummary(cal) {
-    const ws = cal
-        ? cal.view.currentStart.toISOString().slice(0, 10)
-        : new Date().toISOString().slice(0, 10);
+    const localDate = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    const ws = cal ? localDate(cal.view.currentStart) : localDate(new Date());
 
     fetch(`/api/weekly-summary?week_start=${ws}`)
         .then(r => r.json())
