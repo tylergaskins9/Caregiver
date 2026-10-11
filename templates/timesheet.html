@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}Timesheet – CareSchedule{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <h4 class="mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Timesheet</h4>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('main.timesheet', week=prev_week.isoformat()) }}"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-left"></i> Prev
+        </a>
+        <span class="fw-semibold text-dark small">
+            {{ week_start.strftime('%b') }} {{ week_start.day }} – {{ week_end.strftime('%b') }} {{ week_end.day }}, {{ week_end.year }}
+        </span>
+        <a href="{{ url_for('main.timesheet', week=next_week.isoformat()) }}"
+           class="btn btn-outline-secondary btn-sm">
+            Next <i class="bi bi-chevron-right"></i>
+        </a>
+        <a href="{{ url_for('main.timesheet') }}"
+           class="btn btn-outline-primary btn-sm ms-1">Today</a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+{% if current_user.role == 'admin' %}
+<div class="row g-3 mb-3">
+    <div class="col-sm-4">
+        <div class="summary-card">
+            <div class="summary-label">Total Hours This Week</div>
+            <div class="summary-value {{ 'text-success' if grand_total_hours >= 77 else 'text-warning' if grand_total_hours >= 55 else 'text-danger' }}">
+                {{ '%.1f'|format(grand_total_hours) }}
+                <span class="summary-target">/ 77h target</span>
+            </div>
+            <div class="progress mt-2" style="height:6px">
+                <div class="progress-bar {{ 'bg-success' if grand_total_hours >= 77 else 'bg-warning' if grand_total_hours >= 55 else 'bg-danger' }}"
+                     style="width:{{ [grand_total_hours / 77 * 100, 100]|min|round }}%"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="summary-card">
+            <div class="summary-label">Total Projected Pay</div>
+            <div class="summary-value text-success">${{ '%.2f'|format(grand_total_pay) }}</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="summary-card">
+            <div class="summary-label">Caregivers Scheduled</div>
+            <div class="summary-value">{{ timesheet_data | selectattr('weekly_hours', 'gt', 0) | list | length }}
+                <span class="summary-target">/ {{ timesheet_data | length }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Timesheet Table -->
+<div class="content-card p-0">
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0 timesheet-table">
+            <thead>
+                <tr class="table-light">
+                    <th style="min-width:160px">Caregiver</th>
+                    {% for d in week_days %}
+                    <th class="text-center {{ 'today-col' if d == today else '' }}" style="min-width:80px">                        <div class="fw-semibold">{{ d.strftime('%a') }}</div>
+                        <div class="text-muted small">{{ d.strftime('%b') }} {{ d.day }}</div>
+                    </th>
+                    {% endfor %}
+                    <th class="text-center" style="min-width:80px">Total</th>
+                    <th class="text-center" style="min-width:90px">Pay</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in timesheet_data %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="color-swatch" style="background:{{ row.caregiver.color }}"></span>
+                            <span class="fw-semibold">{{ row.caregiver.name }}</span>
+                        </div>
+                        <div class="text-muted small">{{ 'Full Time' if row.caregiver.employment_type == 'full_time' else 'Part Time' }}</div>
+                    </td>
+                    {% for d in week_days %}
+                    <td class="text-center align-middle p-1">
+                        {% for s in row.shifts_by_day[d] %}
+                        <span class="shift-badge {{ s.shift_type }}"
+                              title="{{ s.shift_type.title() }}: {{ s.start_time }}–{{ s.end_time }}{% if s.notes %} · {{ s.notes }}{% endif %}">
+                            {{ 'M' if s.shift_type == 'morning' else 'E' }}
+                            <small>{{ '%.0f'|format(s.duration_hours) }}h</small>
+                        </span>
+                        {% endfor %}
+                    </td>
+                    {% endfor %}
+                    <td class="text-center align-middle fw-bold">
+                        <span class="{{ 'text-success' if row.weekly_hours > 0 else 'text-muted' }}">
+                            {{ '%.1f'|format(row.weekly_hours) }}h
+                        </span>
+                    </td>
+                    <td class="text-center align-middle">
+                        {% if row.weekly_pay > 0 %}
+                        <span class="text-success fw-semibold">${{ '%.2f'|format(row.weekly_pay) }}</span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ 7 + 3 }}" class="text-center text-muted py-4">
+                        No caregivers found. Add caregivers and assign shifts on the Schedule page.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-secondary fw-bold">
+                    <td>Daily Total</td>
+                    {% for d in week_days %}
+                    <td class="text-center">
+                        {% if total_by_day[d] > 0 %}
+                        <span class="{{ 'text-success' if total_by_day[d] >= 11 else 'text-warning' }}">
+                            {{ '%.0f'|format(total_by_day[d]) }}h
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td class="text-center text-success">{{ '%.1f'|format(grand_total_hours) }}h</td>
+                    <td class="text-center text-success">${{ '%.2f'|format(grand_total_pay) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<div class="mt-3 text-muted small">
+    <i class="bi bi-info-circle me-1"></i>
+    <strong class="text-morning">M</strong> = Morning shift (8am–2pm, 6h) &nbsp;·&nbsp;
+    <strong class="text-evening">E</strong> = Evening shift (5pm–10pm, 5h) &nbsp;·&nbsp;
+    Target: <strong>77 hours/week</strong> across all caregivers
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Highlight today's column
+const today = new Date().toISOString().split('T')[0];
+document.querySelectorAll('[data-date]').forEach(el => {
+    if (el.dataset.date === today) el.classList.add('today-col');
+});
+</script>
+{% endblock %}

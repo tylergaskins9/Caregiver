@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}CareSchedule{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <!-- ── Sidebar ───────────────────────────────── -->
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <i class="bi bi-heart-pulse-fill me-2"></i>CareSchedule
+        </div>
+
+        <ul class="sidebar-nav">
+            <li>
+                <a href="{{ url_for('main.calendar') }}"
+                   class="sidebar-link {% if request.endpoint == 'main.calendar' %}active{% endif %}">
+                    <i class="bi bi-calendar-week"></i><span>Schedule</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('main.timesheet') }}"
+                   class="sidebar-link {% if request.endpoint == 'main.timesheet' %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i><span>Timesheet</span>
+                </a>
+            </li>
+            {% if current_user.role == 'admin' %}
+            <li>
+                <a href="{{ url_for('main.caregivers') }}"
+                   class="sidebar-link {% if request.endpoint == 'main.caregivers' %}active{% endif %}">
+                    <i class="bi bi-people-fill"></i><span>Caregivers</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar">{{ current_user.name[0].upper() }}</div>
+                <div class="user-details">
+                    <div class="user-name">{{ current_user.name }}</div>
+                    <div class="user-role">{{ current_user.role.replace('_',' ').title() }}</div>
+                </div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link mt-1">
+                <i class="bi bi-box-arrow-right"></i><span>Sign Out</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ── Main Content ──────────────────────────── -->
+    <div class="main-area">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-wrap">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-2" role="alert">
+                    <i class="bi bi-{% if category == 'success' %}check-circle-fill{% elif category == 'danger' %}exclamation-circle-fill{% else %}info-circle-fill{% endif %} me-2"></i>{{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
