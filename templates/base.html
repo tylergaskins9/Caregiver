@@ -59,6 +59,12 @@
 
     <!-- ── Main Content ──────────────────────────── -->
     <div class="main-area">
+        {% if data_not_persistent %}
+        <div class="alert alert-danger mb-2 rounded-0">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Schedule is NOT being saved permanently.</strong> Everything entered will be lost when the site restarts. Connect the database (DATABASE_URL) to fix this.
+        </div>
+        {% endif %}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             <div class="flash-wrap">

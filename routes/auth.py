@@ -64,7 +64,7 @@ def login():
             return render_template('auth/login.html'), 429
 
         user = User.query.filter_by(email=email).first()
-        if user and user.is_active and user.check_password(password):
+        if user and user.is_active and user.role == 'admin' and user.check_password(password):
             _clear_failures(keys)
             login_user(user, remember=remember)
             next_page = _safe_next(request.args.get('next'))

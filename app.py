@@ -25,6 +25,11 @@ def create_app(config_class=Config):
     login_manager.login_message = 'Please sign in to continue.'
     login_manager.login_message_category = 'info'
 
+    @app.context_processor
+    def storage_warning():
+        # Without DATABASE_URL on Render the SQLite file is wiped on every restart
+        return {'data_not_persistent': IS_PRODUCTION and not os.environ.get('DATABASE_URL')}
+
     @login_manager.unauthorized_handler
     def unauthorized():
         if request.path.startswith('/api/'):

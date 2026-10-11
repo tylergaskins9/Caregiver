@@ -72,14 +72,14 @@ function buildFormHTML(cg) {
             <label class="form-label fw-semibold">Calendar Color</label>
             <div class="color-picker-row">${colorPicker}</div>
         </div>
-        <div class="col-md-4">
-            <label class="form-label fw-semibold">Role</label>
-            <select class="form-select" name="role">
-                <option value="caregiver" ${cg.role !== 'admin' ? 'selected' : ''}>Caregiver</option>
-                <option value="admin"     ${cg.role === 'admin' ? 'selected' : ''}>Admin</option>
-            </select>
-        </div>
+        <div class="col-md-4"></div>
         <div class="col-md-4 d-flex flex-column justify-content-end">
+            <div class="form-check mb-2">
+                <input type="checkbox" class="form-check-input" name="is_admin" id="editIsAdmin"
+                       ${cg.role === 'admin' ? 'checked' : ''} ${cg.id === CURRENT_USER_ID ? 'disabled' : ''}>
+                <label class="form-check-label" for="editIsAdmin">Administrator (can sign in)</label>
+                ${cg.id === CURRENT_USER_ID ? '<div class="form-text mt-0">You cannot remove your own admin access.</div>' : ''}
+            </div>
             <div class="form-check mb-2">
                 <input type="checkbox" class="form-check-input" name="is_active" id="editIsActive"
                        ${cg.is_active ? 'checked' : ''}>
@@ -130,7 +130,8 @@ function buildFormHTML(cg) {
         <div class="col-md-6">
             <label class="form-label fw-semibold">New Password</label>
             <input type="password" class="form-control" name="password" autocomplete="new-password"
-                   placeholder="Leave blank to keep existing">
+                   minlength="8" placeholder="Leave blank to keep existing">
+            <div class="form-text">Required for administrators. At least 8 characters.</div>
         </div>
     </div>`;
 }

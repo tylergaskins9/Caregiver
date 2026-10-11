@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 import requests as http_requests
 
 from app import db
+from config import local_today
 from models import User, Shift
 
 api_bp = Blueprint('api', __name__)
@@ -223,7 +224,7 @@ def copy_week():
 @api_bp.route('/weekly-summary')
 @login_required
 def weekly_summary():
-    today = date.today()
+    today = local_today()
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
 
@@ -277,7 +278,7 @@ def send_schedule():
         week_start = None
 
     if not week_start:
-        today = date.today()
+        today = local_today()
         week_start = today - timedelta(days=today.weekday())
 
     week_end = week_start + timedelta(days=6)

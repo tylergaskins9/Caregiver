@@ -44,14 +44,12 @@
             {% endif %}
         </div>
     </div>
-    <div class="col-md-4">
-        <label class="form-label fw-semibold">Role</label>
-        <select class="form-select" name="role">
-            <option value="caregiver">Caregiver</option>
-            <option value="admin">Admin</option>
-        </select>
-    </div>
+    <div class="col-md-4"></div>
     <div class="col-md-4 d-flex flex-column justify-content-end">
+        <div class="form-check mb-2">
+            <input type="checkbox" class="form-check-input" name="is_admin" id="isAdminCheck">
+            <label class="form-check-label" for="isAdminCheck">Administrator (can sign in)</label>
+        </div>
         <div class="form-check mb-2">
             <input type="checkbox" class="form-check-input" name="is_active" id="isActiveCheck" checked>
             <label class="form-check-label" for="isActiveCheck">Active</label>
@@ -118,6 +116,6 @@
         <label class="form-label fw-semibold">Password</label>
         <input type="password" class="form-control" name="password" autocomplete="new-password"
                minlength="8" placeholder="Leave blank to keep existing">
-        <div class="form-text">At least 8 characters. Caregivers who log in only see their own shifts.</div>
+        <div class="form-text">Required for administrators, who sign in and manage the schedule. Caregivers do not sign in. At least 8 characters.</div>
     </div>
 </div>

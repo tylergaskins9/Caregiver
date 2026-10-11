@@ -24,6 +24,14 @@ def _database_uri():
 
 
 IS_PRODUCTION = bool(os.environ.get('RENDER'))
+APP_TIMEZONE = os.environ.get('APP_TIMEZONE', 'America/New_York')
+
+
+def local_today():
+    # Server clocks run on UTC; 'today' must follow the users' time zone
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    return datetime.now(ZoneInfo(APP_TIMEZONE)).date()
 
 
 class Config:

@@ -2,6 +2,7 @@ from datetime import datetime, date, timedelta
 import json
 
 from app import db, login_manager
+from config import local_today
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -60,7 +61,7 @@ class User(UserMixin, db.Model):
 
     def get_weekly_hours(self, week_start=None):
         if week_start is None:
-            today = date.today()
+            today = local_today()
             week_start = today - timedelta(days=today.weekday())
         week_end = week_start + timedelta(days=6)
         week_shifts = Shift.query.filter(

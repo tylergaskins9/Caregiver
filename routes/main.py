@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from datetime import date, timedelta
 
 from app import db
+from config import local_today
 from models import User, Shift, CAREGIVER_COLORS
 
 main_bp = Blueprint('main', __name__)
@@ -64,6 +65,11 @@ def add_caregiver():
     if password and not _password_ok(password):
         return redirect(url_for('main.caregivers'))
 
+    make_admin = 'is_admin' in request.form
+    if make_admin and not password:
+        flash('Set a password (at least 8 characters) for an administrator so they can sign in.', 'danger')
+        return redirect(url_for('main.caregivers'))
+
     availability = _parse_availability(request.form)
 
     user = User(
@@ -74,7 +80,7 @@ def add_caregiver():
         employment_type=request.form.get('employment_type', 'part_time'),
         emergency_contact_name=request.form.get('emergency_contact_name', '').strip(),
         emergency_contact_phone=request.form.get('emergency_contact_phone', '').strip(),
-        role=request.form.get('role', 'caregiver'),
+        role='admin' if make_admin else 'caregiver',
         color=request.form.get('color', '#4e79a7'),
         receives_full_schedule='receives_full_schedule' in request.form,
         is_active=True,
@@ -86,7 +92,7 @@ def add_caregiver():
 
     db.session.add(user)
     db.session.commit()
-    flash(f'{name} has been added.', 'success')
+    flash(f'{name} has been added' + (' as an administrator.' if make_admin else '.'), 'success')
     return redirect(url_for('main.caregivers'))
 
 
@@ -110,6 +116,14 @@ def edit_caregiver(user_id):
     if password and not _password_ok(password):
         return redirect(url_for('main.caregivers'))
 
+    # You can't remove your own admin access, so there is always at least one admin
+    make_admin = True if user.id == current_user.id else 'is_admin' in request.form
+    promoted = make_admin and user.role != 'admin'
+    if promoted and not (password or user.password_hash):
+        flash('Set a password (at least 8 characters) before making someone an administrator.', 'danger')
+        return redirect(url_for('main.caregivers'))
+
+    user.role = 'admin' if make_admin else 'caregiver'
     user.name = request.form.get('name', user.name).strip()
     user.email = email or user.email
     user.phone = request.form.get('phone', '').strip()
@@ -117,17 +131,20 @@ def edit_caregiver(user_id):
     user.employment_type = request.form.get('employment_type', 'part_time')
     user.emergency_contact_name = request.form.get('emergency_contact_name', '').strip()
     user.emergency_contact_phone = request.form.get('emergency_contact_phone', '').strip()
-    user.role = request.form.get('role', 'caregiver')
     user.color = request.form.get('color', '#4e79a7')
     user.receives_full_schedule = 'receives_full_schedule' in request.form
-    user.is_active = 'is_active' in request.form
+    # The admin account can never be deactivated from the UI (would lock everyone out)
+    user.is_active = True if user.role == 'admin' else 'is_active' in request.form
     user.set_availability(_parse_availability(request.form))
 
     if password:
         user.set_password(password)
 
     db.session.commit()
-    flash(f'{user.name} has been updated.', 'success')
+    if promoted:
+        flash(f'{user.name} is now an administrator and can sign in. Administrators are not scheduled as caregivers.', 'success')
+    else:
+        flash(f'{user.name} has been updated.', 'success')
     return redirect(url_for('main.caregivers'))
 
 
@@ -167,7 +184,7 @@ def timesheet():
             pass
 
     if not week_start:
-        today = date.today()
+        today = local_today()
         week_start = today - timedelta(days=today.weekday())
 
     week_end = week_start + timedelta(days=6)
@@ -219,7 +236,7 @@ def timesheet():
         grand_total_pay=grand_total_pay,
         prev_week=week_start - timedelta(days=7),
         next_week=week_start + timedelta(days=7),
-        today=date.today(),
+        today=local_today(),
     )
 
 
