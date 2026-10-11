@@ -1,0 +1,29 @@
+databases:
+  - name: caregiver-db
+    plan: free
+    databaseName: caregiver
+    user: caregiver
+
+services:
+  - type: web
+    name: caregiver-schedule
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    healthCheckPath: /auth/login
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: caregiver-db
+          property: connectionString
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: POWER_AUTOMATE_WEBHOOK_URL
+        sync: false

@@ -2,7 +2,9 @@ from flask import Flask, jsonify, request, flash, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
-from config import Config
+from werkzeug.middleware.proxy_fix import ProxyFix
+import os
+from config import Config, IS_PRODUCTION
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -12,6 +14,8 @@ csrf = CSRFProtect()
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    if IS_PRODUCTION:
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -46,5 +50,30 @@ def create_app(config_class=Config):
 
     with app.app_context():
         db.create_all()
+        _ensure_admin()
 
     return app
+
+
+def _ensure_admin():
+    """Create the first admin from ADMIN_EMAIL / ADMIN_PASSWORD when the database has none."""
+    from models import User, CAREGIVER_COLORS
+
+    email = os.environ.get('ADMIN_EMAIL', '').strip().lower()
+    password = os.environ.get('ADMIN_PASSWORD', '')
+    if not email or not password or User.query.filter_by(role='admin').first():
+        return
+
+    admin = User(
+        name=os.environ.get('ADMIN_NAME', 'Leigh Ann'),
+        email=email,
+        role='admin',
+        color=CAREGIVER_COLORS[2],
+        receives_full_schedule=True,
+        employment_type='full_time',
+        is_active=True,
+    )
+    admin.set_password(password)
+    admin.set_availability({})
+    db.session.add(admin)
+    db.session.commit()
